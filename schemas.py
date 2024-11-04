@@ -14,7 +14,7 @@ class UpdateUser(BaseModel):
     age: int
 
 
-class CtreateTask(BaseModel):
+class CreateTask(BaseModel):
     title: str
     content: str
     priority: int
