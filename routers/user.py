@@ -6,6 +6,7 @@ from app.backend.db_depends import get_db
 # Аннотации, Модели БД и Pydantic.
 from typing import Annotated
 from app.models import User
+from app.models import Task
 from app.schemas import CreateUser, UpdateUser
 # Функции работы с записями.
 from sqlalchemy import insert, select, update, delete
@@ -19,15 +20,9 @@ router = APIRouter(prefix='/user', tags=['user'])
 
 @router.get('/')
 async def all_users(db: Annotated[Session, Depends(get_db)]):
-    try:
-        stmt = select(User)
-        result = db.scalars(stmt).all()
-        print(f"Пользователи получены: {result}")  # Отладочный принт
-        return result
-    except Exception as e:
-        print(f"Ошибка при получении пользователей: {e}")  # Логирование ошибки
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Ошибка при получении пользователей: {e}")
-
+    stmt = select(User)
+    result = db.scalars(stmt).all()
+    return result
 
 @router.get('/user_id')
 async def user_by_id(user_id: int, db: Annotated[Session, Depends(get_db)]):
@@ -75,9 +70,14 @@ async def update_user(user_id: int, user_data: UpdateUser, db: Annotated[Session
 
 @router.delete('/delete')
 async def delete_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
-    stmt = delete(User).where(User.id == user_id)
-    result = db.execute(stmt)
+    # Удаление всех связанных задач
+    delete_tasks = delete(Task).where(Task.user_id == user_id)
+    db.execute(delete_tasks)
+
+    # Удаление пользователя
+    delete_user_stmt = delete(User).where(User.id == user_id)
+    result = db.execute(delete_user_stmt)
     if result.rowcount == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
     db.commit()
-    return {'status_code': status.HTTP_200_OK, 'transaction': 'User deleted is successfully!'}
+    return {'status_code': status.HTTP_200_OK, 'transaction': 'User and related tasks deletion is successful'}

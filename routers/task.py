@@ -57,4 +57,4 @@ async def delete_task(task_id: int, db: Annotated[Session, Depends(get_db)]):
     if result.rowcount == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     db.commit()
-    return {'status_code': status.HTTP_200_OK, 'transaction': 'Task deletion is successful'}
+    return {'status_code': status.HTTP_200_OK, 'transaction': 'Task deletion successful'}
